@@ -228,6 +228,15 @@ const getPoolData = async (poolId: number) => {
   }
 };
 
+const getPoolTokenAmount = (
+  amounts: string[],
+  tokenAccountIds: string[],
+  tokenId: string
+): string => {
+  const index = tokenAccountIds.indexOf(tokenId);
+  return index >= 0 ? amounts[index] : '0';
+};
+
 // Utility function to format token amounts
 const formatTokenAmount = (amount: string, tokenId: string): string => {
   const decimals = TOKEN_DECIMALS[tokenId] || 24; // Default to 24 if not found
@@ -606,20 +615,22 @@ export function Money() {
             const poolData = pool.poolData;
             if (!poolData) return null;
 
-            // Get token amounts
-            const [amount1, amount2] = poolData.amounts || [];
-            const [token1, token2] = poolData.token_account_ids || [];
-            
-            // Format amounts
-            const formattedAmount1 = formatTokenAmount(amount1, token1);
-            const formattedAmount2 = formatTokenAmount(amount2, token2);
+            const tokenAccountIds = poolData.token_account_ids || [];
+            const amounts = poolData.amounts || [];
 
-            // Get token names from the pool configuration
+            // Map amounts to configured token order (API order may differ per pool)
+            const formattedAmount1 = formatTokenAmount(
+              getPoolTokenAmount(amounts, tokenAccountIds, pool.token1),
+              pool.token1
+            );
+            const formattedAmount2 = formatTokenAmount(
+              getPoolTokenAmount(amounts, tokenAccountIds, pool.token2),
+              pool.token2
+            );
+
             const [token1Name, token2Name] = pool.name.split('/');
-
-            // Get token metadata icons
-            const token1Metadata = tokenMetadata[token1];
-            const token2Metadata = tokenMetadata[token2];
+            const token1Metadata = tokenMetadata[pool.token1];
+            const token2Metadata = tokenMetadata[pool.token2];
 
             // Pool-specific tag content
             const getPoolTag = (poolName: string) => {
